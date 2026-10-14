@@ -39,24 +39,47 @@ jobs:
             sed -i '/<manifest/a\    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>\n    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>' "$MANIFEST"
           fi
 
-      - name: Upgrade Kotlin version
+      - name: Fix Gradle & Kotlin versions
         run: |
-          # settings.gradle এ Kotlin ভার্সন আপডেট
+          # ---------- settings.gradle ----------
           SETTINGS="android/settings.gradle"
           if [ -f "$SETTINGS" ]; then
-            sed -i 's/id "org.jetbrains.kotlin.android" version "[^"]*"/id "org.jetbrains.kotlin.android" version "2.0.21"/g' "$SETTINGS"
+            # Kotlin plugin version -> 1.9.24 (stable, compatible with most)
+            sed -i 's/id "org.jetbrains.kotlin.android" version "[^"]*"/id "org.jetbrains.kotlin.android" version "1.9.24"/g' "$SETTINGS"
+            sed -i 's/id "com.android.application" version "[^"]*"/id "com.android.application" version "8.1.4"/g' "$SETTINGS"
           fi
-          # settings.gradle.kts থাকলে সেটাতেও
+
           SETTINGS_KTS="android/settings.gradle.kts"
           if [ -f "$SETTINGS_KTS" ]; then
-            sed -i 's/id("org.jetbrains.kotlin.android") version "[^"]*"/id("org.jetbrains.kotlin.android") version "2.0.21"/g' "$SETTINGS_KTS"
+            sed -i 's/id("org.jetbrains.kotlin.android") version "[^"]*"/id("org.jetbrains.kotlin.android") version "1.9.24"/g' "$SETTINGS_KTS"
+            sed -i 's/id("com.android.application") version "[^"]*"/id("com.android.application") version "8.1.4"/g' "$SETTINGS_KTS"
           fi
-          # build.gradle এ kotlin_version আপডেট
+
+          # ---------- android/build.gradle ----------
           BUILD="android/build.gradle"
           if [ -f "$BUILD" ]; then
-            sed -i 's/ext.kotlin_version = .*/ext.kotlin_version = "2.0.21"/g' "$BUILD"
+            sed -i 's/ext.kotlin_version = .*/ext.kotlin_version = "1.9.24"/g' "$BUILD"
           fi
-          echo "Kotlin version updated"
+
+          # ---------- gradle-wrapper.properties ----------
+          WRAPPER="android/gradle/wrapper/gradle-wrapper.properties"
+          if [ -f "$WRAPPER" ]; then
+            sed -i 's|distributionUrl=.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-8.3-all.zip|g' "$WRAPPER"
+          fi
+
+          # ---------- app/build.gradle : compileSdk & minSdk ----------
+          APP_BUILD="android/app/build.gradle"
+          if [ -f "$APP_BUILD" ]; then
+            sed -i 's/compileSdk .*/compileSdk 34/g' "$APP_BUILD"
+            sed -i 's/minSdk .*/minSdk 21/g' "$APP_BUILD"
+            sed -i 's/targetSdk .*/targetSdk 34/g' "$APP_BUILD"
+            # Kotlin jvmTarget
+            if ! grep -q "jvmTarget" "$APP_BUILD"; then
+              sed -i '/compileOptions {/a\        kotlinOptions { jvmTarget = "17" }' "$APP_BUILD" || true
+            fi
+          fi
+
+          echo "Gradle & Kotlin versions fixed"
 
       - name: Install dependencies
         run: flutter pub get
