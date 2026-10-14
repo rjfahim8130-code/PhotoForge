@@ -39,6 +39,10 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _images.addAll(newItems);
       });
+
+      if (mounted) {
+        _showSnack('${newItems.length} টি ছবি যোগ হয়েছে');
+      }
     } catch (e) {
       _showSnack('ছবি সিলেক্ট করা যায়নি: $e');
     }
@@ -55,15 +59,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
     for (int i = 0; i < _images.length; i++) {
       await _autoCompressOne(_images[i]);
-      setState(() {
-        _processedCount = i + 1;
-      });
+      if (mounted) {
+        setState(() {
+          _processedCount = i + 1;
+        });
+      }
     }
 
-    setState(() {
-      _isProcessing = false;
-    });
-    _showSnack('সব ছবি কমপ্রেস করা হয়েছে');
+    if (mounted) {
+      setState(() {
+        _isProcessing = false;
+      });
+      _showSnack('সব ছবি কমপ্রেস করা হয়েছে');
+    }
   }
 
   Future<void> _autoCompressOne(ImageItem item) async {
@@ -71,29 +79,35 @@ class _HomeScreenState extends State<HomeScreen> {
     int lastGoodSize = item.originalSize;
     int levelIndex = -1;
 
+    // প্রতিটা লেভেল চেক করো, অরিজিনাল থেকে কমপ্রেস করো,
+    // সবচেয়ে ছোট যেটা পাওয়া যায় সেটা রাখো।
     for (int l = 0; l < compressionLevels.length; l++) {
       final result = await CompressorService.compressInIsolate(
-        working,
+        item.originalBytes,
         compressionLevels[l],
       );
 
-      if (result == null) break;
-      if (result.length >= lastGoodSize) break;
+      if (result == null) continue;
 
-      lastGoodSize = result.length;
-      working = result;
-      levelIndex = l;
+      if (result.length < lastGoodSize) {
+        lastGoodSize = result.length;
+        working = result;
+        levelIndex = l;
+      }
 
+      // ৯০KB এর নিচে চলে গেলে থামো
       if (result.length < 90 * 1024) break;
     }
 
     if (levelIndex >= 0) {
-      setState(() {
-        final idx = _images.indexWhere((e) => e.id == item.id);
-        if (idx != -1) {
-          _images[idx].addVersion(working, levelIndex);
-        }
-      });
+      if (mounted) {
+        setState(() {
+          final idx = _images.indexWhere((e) => e.id == item.id);
+          if (idx != -1) {
+            _images[idx].addVersion(working, levelIndex);
+          }
+        });
+      }
     }
   }
 
@@ -112,7 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     final result = await CompressorService.compressInIsolate(
-      item.currentBytes,
+      item.originalBytes,
       compressionLevels[nextLevel],
     );
 
