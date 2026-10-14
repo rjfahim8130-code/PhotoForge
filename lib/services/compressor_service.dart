@@ -14,17 +14,19 @@ class CompressionLevel {
   });
 }
 
+/// PNG এর ক্ষেত্রে quality কাজ করে না, তাই maxDimension ই মূল হাতিয়ার।
+/// 1600px থেকে শুরু করে ধাপে ধাপে ছোট করা হয়।
 const List<CompressionLevel> compressionLevels = [
-  CompressionLevel(maxDimension: 2400, quality: 90, label: 'L1 (2400px)'),
-  CompressionLevel(maxDimension: 1920, quality: 85, label: 'L2 (1920px)'),
-  CompressionLevel(maxDimension: 1600, quality: 80, label: 'L3 (1600px)'),
-  CompressionLevel(maxDimension: 1280, quality: 75, label: 'L4 (1280px)'),
-  CompressionLevel(maxDimension: 1080, quality: 70, label: 'L5 (1080px)'),
-  CompressionLevel(maxDimension: 900, quality: 65, label: 'L6 (900px)'),
-  CompressionLevel(maxDimension: 720, quality: 60, label: 'L7 (720px)'),
-  CompressionLevel(maxDimension: 600, quality: 55, label: 'L8 (600px)'),
-  CompressionLevel(maxDimension: 480, quality: 50, label: 'L9 (480px)'),
-  CompressionLevel(maxDimension: 360, quality: 45, label: 'L10 (360px)'),
+  CompressionLevel(maxDimension: 1600, quality: 90, label: 'L1 (1600px)'),
+  CompressionLevel(maxDimension: 1280, quality: 85, label: 'L2 (1280px)'),
+  CompressionLevel(maxDimension: 1080, quality: 80, label: 'L3 (1080px)'),
+  CompressionLevel(maxDimension: 900, quality: 75, label: 'L4 (900px)'),
+  CompressionLevel(maxDimension: 720, quality: 70, label: 'L5 (720px)'),
+  CompressionLevel(maxDimension: 600, quality: 65, label: 'L6 (600px)'),
+  CompressionLevel(maxDimension: 480, quality: 60, label: 'L7 (480px)'),
+  CompressionLevel(maxDimension: 400, quality: 55, label: 'L8 (400px)'),
+  CompressionLevel(maxDimension: 320, quality: 50, label: 'L9 (320px)'),
+  CompressionLevel(maxDimension: 240, quality: 45, label: 'L10 (240px)'),
 ];
 
 class CompressorService {
@@ -40,6 +42,7 @@ class CompressorService {
         quality: level.quality,
         format: CompressFormat.png,
       );
+      if (result.isEmpty) return null;
       return Uint8List.fromList(result);
     } catch (e) {
       return null;
