@@ -31,7 +31,6 @@ jobs:
       - name: Regenerate platform folders
         run: |
           flutter create --org com.rfahim8130 --project-name photo_forge --platforms=android .
-          # উপরের কমান্ডটি বর্তমান ফোল্ডারেই android/ বানাবে, lib/ মুছবে না
 
       - name: Add Android permissions
         run: |
@@ -39,6 +38,25 @@ jobs:
           if ! grep -q "READ_MEDIA_IMAGES" "$MANIFEST"; then
             sed -i '/<manifest/a\    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>\n    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>' "$MANIFEST"
           fi
+
+      - name: Upgrade Kotlin version
+        run: |
+          # settings.gradle এ Kotlin ভার্সন আপডেট
+          SETTINGS="android/settings.gradle"
+          if [ -f "$SETTINGS" ]; then
+            sed -i 's/id "org.jetbrains.kotlin.android" version "[^"]*"/id "org.jetbrains.kotlin.android" version "2.0.21"/g' "$SETTINGS"
+          fi
+          # settings.gradle.kts থাকলে সেটাতেও
+          SETTINGS_KTS="android/settings.gradle.kts"
+          if [ -f "$SETTINGS_KTS" ]; then
+            sed -i 's/id("org.jetbrains.kotlin.android") version "[^"]*"/id("org.jetbrains.kotlin.android") version "2.0.21"/g' "$SETTINGS_KTS"
+          fi
+          # build.gradle এ kotlin_version আপডেট
+          BUILD="android/build.gradle"
+          if [ -f "$BUILD" ]; then
+            sed -i 's/ext.kotlin_version = .*/ext.kotlin_version = "2.0.21"/g' "$BUILD"
+          fi
+          echo "Kotlin version updated"
 
       - name: Install dependencies
         run: flutter pub get
